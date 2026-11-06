@@ -204,7 +204,7 @@ The initial 12-hour rule would have allowed only the seed-42 pair. The owner the
 | run | status | wall clock | peak VRAM | final acc (n=200) | note |
 |---|---|---|---|---|---|
 | `ep900_base` (seed 42, full) | **completed** | 14,715.7 s (4.09 h) | 2.33 GiB | **50.0% (100/200)** | beats SFT, McNemar p = 0.001 |
-| `ep900_base_filt` (seed 42, filter) | running | 54/900 at 28.7 s/step → ETA ≈ 6.5 h | — | 未验证 | started after seed-42 evals; 2 resample rounds; under the 1.5× stop rule (1.5× of the 4.4–5.0 h estimate ≈ 7 h) |
+| `ep900_base_filt` (seed 42, filter) | **completed** | 32,023.1 s (8.90 h) | 2.33 GiB | **47.5% (95/200)** | 2 resample rounds; finished above the pre-set 1.5× (~7 h) stop threshold |
 | `ep900_s7_base` (seed 7, full) | queued | — | — | 未验证 | not started |
 | `ep900_s7_filt` (seed 7, filter) | queued | — | — | 未验证 | not started |
 
@@ -234,7 +234,7 @@ Consequence for the earlier negative result: the 300-step run reached 0.340 at *
 
 Full numbers: [experiments/ep900_summary.md](experiments/ep900_summary.md). Figure: [experiments/curves/reward_vs_eval.png](experiments/curves/reward_vs_eval.png).
 
-Filter (seed 42) and both seed-7 runs are still **未验证**; the multi-seed filter claim is pending. No wording beyond these measured numbers is used.
+**Filter ablation is a negative result.** At 300 steps the filter raises effective gradient density 62.8% → 83.1% and cuts zero-variance groups 37.2% → 16.9%; at 900 steps zero-variance goes 45.7% → 26.6%. The final evaluation does not follow: **47.5% (95/200)** vs 50.0% for the unfiltered run, i.e. **−5 items, McNemar p = 0.458**. The engineering gain did not convert into accuracy at this scale — same status as `agent-reflection`'s +2.4 pp / p = 0.451 (a measured null). Both seed-7 runs are still **未验证**.
 
 ---
 
@@ -242,7 +242,7 @@ Filter (seed 42) and both seed-7 runs are still **未验证**; the multi-seed fi
 
 | file | status | content |
 |---|---|---|
-| `experiments/ep900_summary.md` | **auto-regenerated from real data** | Contains a `状态` banner while any of the four 900-step runs is still training. The banner disappears only when all four `*.meta.json` exist. The old 15-step draft that previously lived at this path was **overwritten by the real seed-42 data** (no copy retained, so it can no longer be mistaken for a 900-step conclusion). |
+| `experiments/ep900_summary.md` | **auto-regenerated from real data** | Contains a `状态` banner listing runs that have started but have no `*.meta.json` yet; runs never started appear as `未验证` rows instead of the banner. The old 15-step draft that previously lived at this path was **overwritten by the real seed-42 data** (no copy retained, so it can no longer be mistaken for a 900-step conclusion). |
 | `experiments/long_summary.md` | **final for the 300-step experiment** | Three completed runs (`long_base_s42`, `long_base_s42_filt`, `long_base_s7`); `long_base_s7_filt` never ran and is marked 未验证. |
 | `experiments/curves/reward_vs_eval.png` | **regenerated at every milestone** | Always reflects the checkpoint evals that exist at that moment; not a frozen final figure until all four runs finish. |
 | `experiments/curves/long_reward_zero_std.png`, `filter_compare.png`, `eval_compare.png`, `grpo_reward.png`, `grpo_loss.png` | **final for the runs they name** | 60-step pilot / 300-step long run; no 900-step content. |
@@ -261,7 +261,7 @@ Implementation: `ZeroVarFilterGRPOTrainer` in [src/train_grpo.py](src/train_grpo
 
 ### Measured effect (300-step arm, 4,473-prompt pool)
 
-The 900-step filter arm (`ep900_base_filt`) repeats this at 3.27 epochs; it is still training, so the numbers below are the 300-step measurement and are not extrapolated.
+The 900-step filter arm (`ep900_base_filt`) repeats this at 3.27 epochs; it finished at **47.5% (n=200)** vs 50.0% for the unfiltered run (−5 items, p = 0.458). The table below is the 300-step measurement and is not extrapolated to 900 steps.
 
 | metric | full prompts | filtered (2 rounds) | change |
 |---|---|---|---|
@@ -310,7 +310,7 @@ Directions, with the evidence status for each. "Measured" = a number in this rep
 | **Group size G** | Zero variance comes from `p^G + (1−p)^G`; at G=6 with heterogeneous per-prompt pass rates, the 37% is dominated by prompts whose pass rate is near 0 (hard questions), where increasing G does not help. Larger G helps only mid-difficulty prompts, at linear generation cost. | measured (G=6) + reasoning |
 | **Reward sparsity** | Binary 0/1 correctness at ~35% pass rate creates a structural zero-variance floor. Dense/partial-credit or format rewards raise density: the pilot's format arm had `frac_reward_zero_std = 0.000` yet still did not beat SFT — so density alone is **necessary but not sufficient**; reward *direction* matters more. | measured (pilot format arm) |
 
-**The empirical answer to "when does GRPO win" from this repo**: when (a) the group has non-zero variance, (b) the reward gradient points at the evaluation metric (not at a proxy like format), and (c) there is enough optimisation budget for each prompt to be seen several times. For (c) the measured threshold is between 0.27 and 3.27 epochs; this setup satisfies (b), was budget-limited on (c) at 300 steps, and only at 900 steps does the sign flip. The filtered 900-step arms are still running, so whether filtering *at a sufficient budget* adds anything is 未验证.
+**The empirical answer to "when does GRPO win" from this repo**: when (a) the group has non-zero variance, (b) the reward gradient points at the evaluation metric (not at a proxy like format), and (c) there is enough optimisation budget for each prompt to be seen several times. For (c) the measured threshold is between 0.27 and 3.27 epochs; this setup satisfies (b), was budget-limited on (c) at 300 steps, and only at 900 steps does the sign flip. The filtered 900-step seed-42 arm finished at 47.5% (n=200), −5 items vs the unfiltered 50.0% (p = 0.458), despite raising gradient density (300-step arm: 62.8% → 83.1%). That is a **negative result at sufficient budget**, not a pending measurement: filtering did not convert into accuracy; seed 7 is still 未验证.
 
 ---
 
@@ -383,7 +383,7 @@ Other limits, unchanged in kind:
 - **Single scale.** Qwen2.5-0.5B only. No claim about larger models.
 - **Epoch budget:** met only in the 900-step arm (3.27 epochs). The 300-step arm ran 0.268 epoch and is reported as a counter-example, not as a result about GRPO. The ≥2-epoch run on the *full* pool (~2,236 steps, ~12 h per curve) was never run.
 - **Statistical power.** n = 200 gives roughly ±6 pp at 95% on a single arm; deltas of 3–4 pp are inside that interval. "No detected effect" ≠ "GRPO is harmful".
-- **Filter coverage.** Seed 42 filtered arm is running; seed 7 filtered arm is queued. The filter's accuracy effect is therefore still a single-seed observation; only the gradient-density gain is measured over hundreds of steps.
+- **Filter coverage.** Seed 42 filtered arm finished at 47.5% (n=200, −5 items vs full, p = 0.458) — a negative result on accuracy despite the gradient-density gain; seed 7 filtered arm is not run. The filter's accuracy effect is therefore still a single-seed observation; only the gradient-density gain is measured over hundreds of steps.
 - **Baseline drift: checked, none.** `base.json` (30.0%) predates the last edit of `src/evaluate.py`, so it was re-run under the 900-step config as `base_ep900.json`: **0.300 (60/200)** again, with all 200 per-item `pred`/`correct` values identical to the earlier file. The 30.0% baseline is therefore stable across the old and new evaluation paths.
 - **One benchmark.** GSM8K test subset only; no MATH, no out-of-domain generalisation, no pass@k.
 - **PPO absent.** No PPO baseline was run (see above); no PPO numbers are claimed.
