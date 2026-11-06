@@ -11,7 +11,7 @@
 **这个仓能证明什么**：同一套 GRPO 配置在 3.27 epoch 下比 SFT 多 23 题（50.0% vs 38.5%，配对 McNemar p=0.001），
 在 0.268 epoch 下反而打不过 SFT（34.0%），复现了"epoch 预算决定结果"。
 
-**这个仓不能证明什么**：单 seed、n=200，两个区间只在上沿相接，不能写"显著提升"，也不能外推到其他模型规模。
+**这个仓不能证明什么**：head 结论单 seed（300 步反例另有 seed 42 / seed 7 两轮）、n=200，两个区间只在上沿相接，不能写"显著提升"，也不能外推到其他模型规模。
 
 <p align="center">
   <img src="experiments/curves/reward_vs_eval.png" width="820" alt="reward vs eval across checkpoints">
