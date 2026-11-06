@@ -4,6 +4,15 @@
 
 **中文一句话**：单张 RTX 3060 6GB、Qwen2.5-0.5B + LoRA r16。在 3.27 epoch 下 GRPO **超过** SFT：50.0%（100/200）对 38.5%（77/200），净 +23 题、配对 McNemar p=0.001；而同一套配置在 0.268 epoch 时只有 34.0%，连 SFT 都打不过。所以这个规模上**决定结果的是 epoch 预算，不是算法本身**。单 seed、n=200，两个区间只在上沿相接，因此只写"净 +23 题、p=0.001"，不写"显著提升"。
 
+> **仓库不含权重**：`experiments/checkpoints/` 下的 `*.safetensors`（合计 1.77 GB，单文件最大 942.3 MiB）不入库。
+> clone 下来没有 checkpoint 是预期行为，不是仓库坏了：用 `make train` / `make train-long` 重新生成，
+> 或直接用 `make summary` 从已入库的 `experiments/eval/*.jsonl` 复算全部数字。
+
+**这个仓能证明什么**：同一套 GRPO 配置在 3.27 epoch 下比 SFT 多 23 题（50.0% vs 38.5%，配对 McNemar p=0.001），
+在 0.268 epoch 下反而打不过 SFT（34.0%），复现了"epoch 预算决定结果"。
+
+**这个仓不能证明什么**：单 seed、n=200，两个区间只在上沿相接，不能写"显著提升"，也不能外推到其他模型规模。
+
 <p align="center">
   <img src="experiments/curves/reward_vs_eval.png" width="820" alt="reward vs eval across checkpoints">
 </p>
