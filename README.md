@@ -22,6 +22,8 @@
 
 ## 30-second verification
 
+环境：`pip install -r requirements.txt`。该固定版本清单（`torch==2.14.1` / `transformers==5.17.0` 等）**未在干净环境验证过**——本机对 pypi.org 的探测超时，能否解析未知；若安装失败请开 issue 回报。
+
 **不需要权重，clone 完就能跑（CPU，秒级）**：
 
 ```bash
@@ -38,6 +40,8 @@ make verify        # 4 pilot checkpoints × 40 GSM8K items, ~4 min on GPU
 make verify-long   # 3 long-run checkpoints × 40 GSM8K items (missing tags are skipped)
 make eval          # 200-item tables for the checkpoints you trained
 ```
+
+上面这四条重训练/重评测命令（以及 `bash scripts/run_all.sh` / `run_long.sh` / `chain_ep900.sh`）：**只验证了入口存在与 `make -n` 可解析，未在此环境完整执行**（需 GPU 与已训练权重，约 1.5–5 h）。
 
 Actual output recorded at training time (the shipped `experiments/eval/verify_*.json`; not re-runnable without the LoRA checkpoints):
 
@@ -396,4 +400,4 @@ Python 3.12.3, torch 2.14.1+cu130, transformers 5.17.0, trl 1.17.1, peft 0.21.2,
 
 ## License
 
-MIT (add `LICENSE` before publishing).
+MIT，见 `LICENSE`。
