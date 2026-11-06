@@ -1,0 +1,10 @@
+{
+  "name": "base_ep900",
+  "model_path": "/data3/hf_cache/hub/models--Qwen--Qwen2.5-0.5B-Instruct/snapshots/7ae557604adf67be50417f59c2c2f167def9a775",
+  "num_samples": 200,
+  "accuracy": 0.3,
+  "format_compliance_rate": 0.01,
+  "parse_fail_rate": 0.255,
+  "avg_completion_tokens": 235.88,
+  "elapsed_seconds": 208.901460647583
+}

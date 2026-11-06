@@ -1,0 +1,14 @@
+{
+  "tag": "long_base_s42",
+  "seed": 42,
+  "reward_set": "base",
+  "zero_var_rounds": 0,
+  "max_steps": 300,
+  "batch_size": 24,
+  "num_generations": 6,
+  "max_completion_length": 192,
+  "pool_size": 4473,
+  "prompt_visits": 1200,
+  "train_seconds": 5997.6,
+  "peak_gpu_gib": 2.4
+}

@@ -1,0 +1,10 @@
+{
+  "name": "long_base_s7",
+  "model_path": "experiments/checkpoints/long_base_s7",
+  "num_samples": 200,
+  "accuracy": 0.39,
+  "format_compliance_rate": 0.95,
+  "parse_fail_rate": 0.015,
+  "avg_completion_tokens": 106.2,
+  "elapsed_seconds": 123.14716577529907
+}

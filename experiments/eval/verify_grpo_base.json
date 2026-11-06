@@ -1,0 +1,10 @@
+{
+  "name": "verify_grpo_base",
+  "model_path": "./experiments/checkpoints/grpo_base",
+  "num_samples": 40,
+  "accuracy": 0.375,
+  "format_compliance_rate": 0.95,
+  "parse_fail_rate": 0.0,
+  "avg_completion_tokens": 96.2,
+  "elapsed_seconds": 27.3930926322937
+}

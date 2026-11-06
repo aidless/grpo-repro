@@ -1,0 +1,10 @@
+{
+  "name": "ep900_base_step100_n100",
+  "model_path": "./experiments/checkpoints/ep900_base/checkpoint-100",
+  "num_samples": 100,
+  "accuracy": 0.37,
+  "format_compliance_rate": 0.97,
+  "parse_fail_rate": 0.0,
+  "avg_completion_tokens": 97.76,
+  "elapsed_seconds": 58.41036415100098
+}

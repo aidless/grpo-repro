@@ -1,0 +1,10 @@
+{
+  "name": "long_base_s42_filt",
+  "model_path": "./experiments/checkpoints/long_base_s42_filt",
+  "num_samples": 200,
+  "accuracy": 0.385,
+  "format_compliance_rate": 0.96,
+  "parse_fail_rate": 0.005,
+  "avg_completion_tokens": 96.24,
+  "elapsed_seconds": 132.92871618270874
+}

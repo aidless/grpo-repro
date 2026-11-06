@@ -1,0 +1,10 @@
+{
+  "name": "verify_base",
+  "model_path": "/data3/hf_cache/hub/models--Qwen--Qwen2.5-0.5B-Instruct/snapshots/7ae557604adf67be50417f59c2c2f167def9a775",
+  "num_samples": 40,
+  "accuracy": 0.4,
+  "format_compliance_rate": 0.0,
+  "parse_fail_rate": 0.15,
+  "avg_completion_tokens": 229.2,
+  "elapsed_seconds": 33.752156257629395
+}

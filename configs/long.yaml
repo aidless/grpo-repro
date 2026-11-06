@@ -1,0 +1,50 @@
+# 长程实验配置：GSM8K 全量训练集（SFT 3000 + GRPO 4473，两者不重叠）
+#
+# 硬件硬约束（RTX 3060 Laptop 6GB）：
+#   每个 optimizer step 只能承载 4 个 prompt × 6 generations × 192 tokens。
+#   300 步 = 1200 次 prompt 访问 = 4473 题库的 27%（= 全量 7473 的 16%），
+#   要做到「2 个 epoch」需要 ~2200 步、约 13 小时/条曲线，6GB 卡上不可行。
+#   本配置的取舍写进 README 的「边界条件」一节，不做隐瞒。
+model: Qwen/Qwen2.5-0.5B-Instruct
+model_path: /data3/hf_cache/hub/models--Qwen--Qwen2.5-0.5B-Instruct/snapshots/7ae557604adf67be50417f59c2c2f167def9a775
+seed: 42
+
+data_dir: data/long
+sft_n: 3000      # 与 data/full 完全一致，可直接复用已训练的 sft_merged
+grpo_n: 4473     # train[3000:7473]，全量训练集剩余部分，与 SFT 不重叠
+eval_n: 200
+
+sft_out: experiments/checkpoints/sft
+sft_merged: experiments/checkpoints/sft_merged
+grpo_base_out: experiments/checkpoints/long_base
+
+sft:
+  max_length: 512
+  batch_size: 4
+  grad_accum: 2
+  lr: 2.0e-4
+  epochs: 1
+  max_steps: -1
+  logging_steps: 5
+  warmup_steps: 10
+  lora_r: 16
+  lora_alpha: 32
+
+grpo:
+  # 24 completions = 4 prompts × 6 generations（显存上限附近，见 logs/*.meta.json）
+  batch_size: 24
+  num_generations: 6
+  max_completion_length: 192
+  lr: 1.0e-5
+  max_steps: 300
+  temperature: 0.9
+  beta: 0.0
+  loss_type: grpo
+  lora_r: 16
+  lora_alpha: 32
+  # 零方差过滤：0 = 关闭（全量 prompt）；1 = 只对零方差组做 1 轮重采样替换
+  zero_var_rounds: 0
+
+eval:
+  batch_size: 8
+  max_new_tokens: 256

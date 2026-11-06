@@ -1,0 +1,10 @@
+{
+  "name": "grpo_format",
+  "model_path": "experiments/checkpoints/grpo_format",
+  "num_samples": 200,
+  "accuracy": 0.345,
+  "format_compliance_rate": 0.93,
+  "parse_fail_rate": 0.02,
+  "avg_completion_tokens": 103.04,
+  "elapsed_seconds": 239.74917793273926
+}

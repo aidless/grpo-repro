@@ -1,0 +1,2 @@
+train_seconds=14715.7
+reward_set=base

@@ -1,0 +1,58 @@
+# 多 epoch 实验：把 GRPO 题库缩到 1,100 题（从 4,473 里固定 seed 抽样），
+# 让 300 步 ≈ 1.09 epoch、900 步 ≈ 3.27 epoch。
+#
+# 动机：300 步 @4 prompts = 1,200 次访问，对 4,473 题库只有 0.268 epoch，
+#       "GRPO 不如 SFT" 可能是"根本没看过数据"。这里用更小的题库换 epoch，
+#       而不是把墙钟堆到 12 小时/条曲线。
+#
+# 预算（实测首 10 步 ~13.4 s/step，含每 100 步 n=200 checkpoint 评测）：
+#   base@900   ≈ 3.4 h
+#   filter@900 ≈ 4.4 h（零方差过滤多耗 2 轮，约 1.3×）
+#   20 次 checkpoint 评测 ≈ 0.8 h
+#   合计 ≈ 8.6 h；若再跑第二个 seed（base+filter）≈ +7.8 h → 总计 >12 h，
+#   因此按预算规则只跑 seed 42 的 base@900 与 filter@900，seed 7 留作未验证。
+model: Qwen/Qwen2.5-0.5B-Instruct
+model_path: /data3/hf_cache/hub/models--Qwen--Qwen2.5-0.5B-Instruct/snapshots/7ae557604adf67be50417f59c2c2f167def9a775
+seed: 42
+
+data_dir: data/ep900
+sft_n: 3000          # 与 long/full 完全一致，直接复用 sft_merged
+grpo_n: 1100         # 固定 seed 从 train[3000:7473] 抽 1100 题
+grpo_sample_seed: 4242
+eval_n: 200          # 与之前所有实验同一批 test_index，保证可比
+
+sft_out: experiments/checkpoints/sft
+sft_merged: experiments/checkpoints/sft_merged
+grpo_base_out: experiments/checkpoints/ep900_base
+
+sft:
+  max_length: 512
+  batch_size: 4
+  grad_accum: 2
+  lr: 2.0e-4
+  epochs: 1
+  max_steps: -1
+  logging_steps: 5
+  warmup_steps: 10
+  lora_r: 16
+  lora_alpha: 32
+
+grpo:
+  # 与 long.yaml 相同的 24 completions = 4 prompts × 6 generations × 192 tokens
+  batch_size: 24
+  num_generations: 6
+  max_completion_length: 192
+  lr: 1.0e-5
+  max_steps: 900
+  temperature: 0.9
+  beta: 0.0
+  loss_type: grpo
+  lora_r: 16
+  lora_alpha: 32
+  zero_var_rounds: 0
+  # 每 100 步存一次 adapter（只存 adapter，不存优化器），供离线评测
+  save_steps: 100
+
+eval:
+  batch_size: 8
+  max_new_tokens: 256

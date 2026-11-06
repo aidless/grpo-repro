@@ -1,0 +1,10 @@
+{
+  "name": "ep900_base_filt_step800_n100",
+  "model_path": "./experiments/checkpoints/ep900_base_filt/checkpoint-800",
+  "num_samples": 100,
+  "accuracy": 0.51,
+  "format_compliance_rate": 0.98,
+  "parse_fail_rate": 0.0,
+  "avg_completion_tokens": 116.08,
+  "elapsed_seconds": 74.49655866622925
+}

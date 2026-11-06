@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# LoRA 权重：合计 1.77 GB 的 *.safetensors，其中 sft_merged/model.safetensors 单文件 942.3 MiB，
+# 超过 GitHub 单文件 100 MB 硬限；权重可由 make train / make train-long 重新生成，不入库。
+experiments/checkpoints/

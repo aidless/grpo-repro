@@ -1,0 +1,43 @@
+# 最小闭环 smoke：几十条样本 + 极少步数，只为验证奖励/日志/评测跑通
+model: Qwen/Qwen2.5-0.5B-Instruct
+model_path: ""
+seed: 42
+
+data_dir: data/smoke
+sft_n: 40
+grpo_n: 16
+eval_n: 20
+
+sft_out: experiments/checkpoints/smoke_sft
+sft_merged: experiments/checkpoints/smoke_sft_merged
+grpo_base_out: experiments/checkpoints/smoke_grpo_base
+grpo_format_out: experiments/checkpoints/smoke_grpo_format
+
+sft:
+  max_length: 512
+  batch_size: 2
+  grad_accum: 1
+  lr: 2.0e-4
+  epochs: 1
+  max_steps: 12
+  logging_steps: 1
+  warmup_steps: 2
+  lora_r: 8
+  lora_alpha: 16
+
+grpo:
+  # batch_size 在此版 trl 中是「每次生成/优化的 completion 数」，必须能被 num_generations 整除
+  batch_size: 8
+  num_generations: 4
+  max_completion_length: 160
+  lr: 1.0e-5
+  max_steps: 4
+  temperature: 0.9
+  beta: 0.0
+  loss_type: grpo
+  lora_r: 8
+  lora_alpha: 16
+
+eval:
+  batch_size: 8
+  max_new_tokens: 160

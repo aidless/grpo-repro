@@ -1,0 +1,43 @@
+# 正式实验配置：RTX 3060 6GB 可承受的规模
+model: Qwen/Qwen2.5-0.5B-Instruct
+model_path: ""
+seed: 42
+
+data_dir: data/full
+sft_n: 3000
+grpo_n: 600
+eval_n: 200
+
+sft_out: experiments/checkpoints/sft
+sft_merged: experiments/checkpoints/sft_merged
+grpo_base_out: experiments/checkpoints/grpo_base
+grpo_format_out: experiments/checkpoints/grpo_format
+
+sft:
+  max_length: 512
+  batch_size: 4
+  grad_accum: 2
+  lr: 2.0e-4
+  epochs: 1
+  max_steps: -1
+  logging_steps: 5
+  warmup_steps: 10
+  lora_r: 16
+  lora_alpha: 32
+
+grpo:
+  # 18 completions = 3 prompts × 6 generations
+  batch_size: 18
+  num_generations: 6
+  max_completion_length: 256
+  lr: 1.0e-5
+  max_steps: 60
+  temperature: 0.9
+  beta: 0.0
+  loss_type: grpo
+  lora_r: 16
+  lora_alpha: 32
+
+eval:
+  batch_size: 8
+  max_new_tokens: 256
