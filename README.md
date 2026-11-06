@@ -5,8 +5,9 @@
 **中文一句话**：单张 RTX 3060 6GB、Qwen2.5-0.5B + LoRA r16。在 3.27 epoch 下 GRPO **超过** SFT：50.0%（100/200）对 38.5%（77/200），净 +23 题、配对 McNemar p=0.001；而同一套配置在 0.268 epoch 时只有 34.0%，连 SFT 都打不过。所以这个规模上**决定结果的是 epoch 预算，不是算法本身**。单 seed、n=200，两个区间只在上沿相接，因此只写"净 +23 题、p=0.001"，不写"显著提升"。
 
 > **仓库不含权重**：`experiments/checkpoints/` 下的 `*.safetensors`（合计 1.77 GB，单文件最大 942.3 MiB）不入库。
-> clone 下来没有 checkpoint 是预期行为，不是仓库坏了：用 `make train` / `make train-long` 重新生成，
-> 或直接用 `make summary` 从已入库的 `experiments/eval/*.jsonl` 复算全部数字。
+> clone 下来没有 checkpoint 是预期行为，不是仓库坏了：用 `bash scripts/run_all.sh`（60 步 pilot）/
+> `bash scripts/run_long.sh`（300 步）重新生成，900 步 head 用 `bash scripts/chain_ep900.sh`；
+> 或直接用 `make summary` / `make summary-ep900` 从已入库的 `experiments/eval/*.jsonl` 复算全部数字。
 
 **这个仓能证明什么**：同一套 GRPO 配置在 3.27 epoch 下比 SFT 多 23 题（50.0% vs 38.5%，配对 McNemar p=0.001），
 在 0.268 epoch 下反而打不过 SFT（34.0%），复现了"epoch 预算决定结果"。
@@ -21,14 +22,24 @@
 
 ## 30-second verification
 
+**不需要权重，clone 完就能跑（CPU，秒级）**：
+
 ```bash
-make verify        # 4 pilot checkpoints × 40 GSM8K items, ~4 min on GPU
-make verify-long   # the 3 shipped long-run checkpoints × 40 GSM8K items (missing tags are skipped)
-make summary       # recompute the long-run table from raw JSONL (no training)
-make test          # 22 CPU-only unit tests for the verifier, ~0.2 s
+make test           # 22 CPU-only unit tests for the verifier, ~0.2 s
+make summary        # recompute the 300-step long-run table from raw JSONL
+make summary-ep900  # recompute the 900-step headline table from raw JSONL
+make report         # regenerate experiments/curves/*.png from real logs
 ```
 
-Actual output of the shipped 40-item pilot run (`experiments/eval/verify_*.json`):
+**需要先训练出 checkpoint**（仓库不含权重，见上方提示；训练入口 `bash scripts/run_all.sh` / `run_long.sh` / `chain_ep900.sh`）：
+
+```bash
+make verify        # 4 pilot checkpoints × 40 GSM8K items, ~4 min on GPU
+make verify-long   # 3 long-run checkpoints × 40 GSM8K items (missing tags are skipped)
+make eval          # 200-item tables for the checkpoints you trained
+```
+
+Actual output recorded at training time (the shipped `experiments/eval/verify_*.json`; not re-runnable without the LoRA checkpoints):
 
 ```text
 model            n   acc     fmt  parse_fail  avg_tok  wall_s
@@ -40,15 +51,15 @@ grpo_format     40  0.350   0.950       0.000     97.2    48.7
 
 Accuracy/format/parse/token counts are deterministic across repeated runs; wall time varies with CPU/GPU contention.
 
-Note the 40-item subset is noisier than the published 200-item table below (base scores 0.400 here vs 0.300 there); use `make eval` for the numbers quoted in the paper/resume.
+Note the 40-item subset is noisier than the published 200-item table below (base scores 0.400 here vs 0.300 there); use `make summary-ep900` for the numbers quoted in the paper/resume.
 
-Long-run 40-item check (`make verify-long`, real output): `long_base_s42` 0.375, `long_base_s42_filt` 0.375, `long_base_s7` 0.450. The 40-item subset cannot rank models — it puts seed 7 above the filtered run — so only the 200-item table is used for conclusions.
+Long-run 40-item check (`make verify-long`, output recorded at training time; re-running needs the checkpoints): `long_base_s42` 0.375, `long_base_s42_filt` 0.375, `long_base_s7` 0.450. The 40-item subset cannot rank models — it puts seed 7 above the filtered run — so only the 200-item table is used for conclusions.
 
-Full reproduction of the published tables (200 items per model, ~20 min):
+Full reproduction of the published tables needs checkpoints (not shipped). Without weights, recompute the published numbers from the shipped per-item JSONL:
 
 ```bash
-make eval       # re-runs all evaluations with the shipped checkpoints
-make report     # regenerates experiments/curves/*.png from real logs
+make summary-ep900  # the 900-step headline table, seconds, no training
+make report         # regenerates experiments/curves/*.png from real logs
 ```
 
 End-to-end retraining from scratch (~1.5 h for the pilot: measured training 517 s SFT + 1329 s / 1412 s GRPO,
@@ -56,7 +67,7 @@ plus evaluations, on RTX 3060 6GB):
 
 ```bash
 bash scripts/run_all.sh          # configs/full.yaml (60-step pilot)
-bash scripts/run_long.sh         # configs/long.yaml (300-step × 3 shipped runs, ~5 h)
+bash scripts/run_long.sh         # configs/long.yaml (300-step × 3 long runs, ~5 h)
 ```
 
 ---
@@ -313,7 +324,7 @@ Directions, with the evidence status for each. "Measured" = a number in this rep
 4. **Greedy, fixed subset.** `do_sample=False`, `max_new_tokens=256`, same 200 items for every model. Sampling would add variance larger than the effect we are trying to detect.
 5. **LoRA everywhere, `beta=0`, `loss_type=grpo`.** Full fine-tuning of even a 0.5B model does not fit comfortably in 6 GB alongside 6 generations × 192 tokens; LoRA r=16 / alpha=32 is the largest configuration that ran without OOM. `beta=0` (no reference model) is a 6 GB requirement, not a GRPO recommendation.
 6. **Filtering = resampling, not masking.** Masking zero-advantage rows is a no-op; the subclass replaces zero-variance groups with fresh pool prompts and logs the replacement count, so the density claim is auditable.
-7. **Raw logs and per-sample outputs are shipped; LoRA weights are not.** Every number above can be recomputed from `experiments/logs/` + `experiments/eval/` without retraining (`make summary`, `make report`). The `*.safetensors` under `experiments/checkpoints/` total 1.77 GB (largest single file 942.3 MiB, above GitHub's 100 MB hard limit), so they stay out of git and are regenerated by `make train` / `make train-long`.
+7. **Raw logs and per-sample outputs are shipped; LoRA weights are not.** Every number above can be recomputed from `experiments/logs/` + `experiments/eval/` without retraining (`make summary`, `make report`). The `*.safetensors` under `experiments/checkpoints/` total 1.77 GB (largest single file 942.3 MiB, above GitHub's 100 MB hard limit), so they stay out of git and are regenerated by `bash scripts/run_all.sh` / `bash scripts/run_long.sh`.
 
 ## Repository layout
 
@@ -327,7 +338,7 @@ src/              prepare_data, train_sft, train_grpo (+ ZeroVarFilterGRPOTraine
 experiments/
   checkpoints/    sft, sft_merged, grpo_base, grpo_format, long_base_s42, long_base_s42_filt, long_base_s7,
                   ep900_base (+ step100..step900 adapters), ep900_base_filt, ep900_s7_base, ep900_s7_filt
-                  — 不入库（1.77 GB safetensors）；make train / make train-long 重新生成
+                  — 不入库（1.77 GB safetensors）；bash scripts/run_all.sh / run_long.sh 重新生成
   logs/           per-step JSONL (reward, zero-std, entropy, filter/*), *.meta.json, wall-clock files
   eval/           metrics JSON + 200 per-sample JSONL for every model, *_ckpt.jsonl (per-checkpoint series), compare.md
   curves/         pilot curves, long_reward_zero_std.png, filter_compare.png, eval_compare.png, reward_vs_eval.png
