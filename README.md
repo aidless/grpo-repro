@@ -12,7 +12,7 @@
 **这个仓能证明什么**：同一套 GRPO 配置在 3.27 epoch 下比 SFT 多 23 题（50.0% vs 38.5%，配对 McNemar p=0.001），
 在 0.268 epoch 下反而打不过 SFT（34.0%），复现了"epoch 预算决定结果"。
 
-**这个仓不能证明什么**：head 结论单 seed（300 步反例另有 seed 42 / seed 7 两轮）、n=200，两个区间只在上沿相接，不能写"显著提升"，也不能外推到其他模型规模。
+**这个仓不能证明什么**：head 的 +23 题仍来自 seed 42 单点；seed 7 已跑完 full/filter 两条 900 步臂（49.0% / 50.0%），复现了方向但不是同一个数，不能把 +23 当成两 seed 平均效应。n=200，两个区间只在上沿相接，不能写"显著提升"，也不能外推到其他模型规模。
 
 <p align="center">
   <img src="experiments/curves/reward_vs_eval.png" width="820" alt="reward vs eval across checkpoints">
@@ -89,7 +89,7 @@ The single most important number in this repo is not "GRPO vs SFT" but **how man
 
 Reading: at 0.268 epoch each prompt is seen once (1,200 visits over a 4,473-prompt pool) and GRPO lands 4.5 pp **below** SFT. At 3.27 epochs (3,600 visits over a 1,100-prompt pool) it lands 11.5 pp **above** SFT, and the paired test clears p = 0.05. The algorithm did not change between those two rows — only the epoch budget did. That is why the earlier negative result is filed as a budget artefact rather than an algorithmic ceiling.
 
-What this does **not** say: that GRPO is generally better than SFT at 0.5B (single seed so far), or that the gap is large (n=200 intervals only touch at one edge). See [Limitations](#limitations).
+What this does **not** say: that GRPO is generally better than SFT at 0.5B (two seeds at 900 steps only, one model scale), or that the gap is large (n=200 intervals only touch at one edge). See [Limitations](#limitations).
 
 ---
 
@@ -197,7 +197,7 @@ Measured step time at launch: **~13.4 s/step** (first 10 steps of `ep900_base`);
 | **seed 42 pair total** | **≈ 8.6 h** |
 | adding seed 7 (base + filter) | ≈ +9 h → **≈ 18 h total** |
 
-The initial 12-hour rule would have allowed only the seed-42 pair. The owner then authorised continued GPU use, so **seed 7 was appended after the seed-42 queue (never inserted)**. Execution order: seed-42 checkpoint evals → `ep900_base_filt` → seed-42 filter evals → `ep900_s7_base` → `ep900_s7_filt`. Runs are tagged `ep900_base`, `ep900_base_filt`, `ep900_s7_base`, `ep900_s7_filt` (900 steps, 3.27 epochs each, same 1,100-prompt pool and same eval subset).
+The initial 12-hour rule would have allowed only the seed-42 pair. The owner then authorised continued GPU use, so **seed 7 was appended after the seed-42 queue (never inserted)**. Execution order: seed-42 checkpoint evals → `ep900_base_filt` → seed-42 filter evals → `ep900_s7_base` → `ep900_s7_filt`. Runs are tagged `ep900_base`, `ep900_base_filt`, `ep900_s7_base`, `ep900_s7_filt` (900 steps, 3.27 epochs each, same 1,100-prompt pool and same eval subset). **All four 900-step arms are now complete**, i.e. the seed × filter 2×2 matrix is fully measured.
 
 ### Run progress (updated at each milestone)
 
@@ -205,8 +205,8 @@ The initial 12-hour rule would have allowed only the seed-42 pair. The owner the
 |---|---|---|---|---|---|
 | `ep900_base` (seed 42, full) | **completed** | 14,715.7 s (4.09 h) | 2.33 GiB | **50.0% (100/200)** | beats SFT, McNemar p = 0.001 |
 | `ep900_base_filt` (seed 42, filter) | **completed** | 32,023.1 s (8.90 h) | 2.33 GiB | **47.5% (95/200)** | 2 resample rounds; finished above the pre-set 1.5× (~7 h) stop threshold |
-| `ep900_s7_base` (seed 7, full) | queued | — | — | 未验证 | not started |
-| `ep900_s7_filt` (seed 7, filter) | queued | — | — | 未验证 | not started |
+| `ep900_s7_base` (seed 7, full) | **completed** | 9,035.3 s (2.51 h) | 2.53 GiB | **49.0% (98/200)** | second seed; 1.0 pp below the seed-42 full arm |
+| `ep900_s7_filt` (seed 7, filter) | **completed** | 21,917.8 s (6.09 h) | 2.53 GiB | **50.0% (100/200)** | 2 resample rounds; wall clock inflated by GPU co-tenant load |
 
 ### Decision rule (fixed in advance)
 
@@ -225,7 +225,7 @@ The initial 12-hour rule would have allowed only the seed-42 pair. The owner the
 | GRPO final (step 900), n=200 | **50.0% (100/200)**, Wilson 95% CI [43.1, 56.9] |
 | delta vs SFT | **+11.5 pp = +23 items** |
 | paired McNemar vs SFT | 12 (SFT-only) vs 35 (GRPO-only), **p = 0.001** |
-| seeds | **1** (seed 42); seed 7 queued, not yet available |
+| seeds | **1** for this table (seed 42); seed-7 replicate at 900 steps: full **49.0% (98/200)**, filtered **50.0% (100/200)** |
 | train/test overlap | **0** — `make overlap` re-derives the split and finds 0 shared questions (see Limitations) |
 
 Checkpoint series (each point n=100; final point n=200): 100→37.0%, 200→39.0%, 300→55.0%, 400→49.0%, 500→50.0%, 600→48.0%, 700→52.0%, 800→53.0%, 900→53.0% (n=100) / **50.0% (n=200)**. For the n=100 points the same-subset SFT reference is 37.0%; every point from step 300 onward is ≥ 48%, i.e. above that reference.
@@ -261,7 +261,7 @@ Implementation: `ZeroVarFilterGRPOTrainer` in [src/train_grpo.py](src/train_grpo
 
 ### Measured effect (300-step arm, 4,473-prompt pool)
 
-The 900-step filter arm (`ep900_base_filt`) repeats this at 3.27 epochs; it finished at **47.5% (n=200)** vs 50.0% for the unfiltered run (−5 items, p = 0.458). The table below is the 300-step measurement and is not extrapolated to 900 steps.
+The 900-step filter arm (`ep900_base_filt`) repeats this at 3.27 epochs; it finished at **47.5% (n=200)** vs 50.0% for the same-seed unfiltered run (−5 items, p = 0.4583). With the second seed (`ep900_s7_filt`, **50.0%**) the picture is a tie, not a regression — see the 2×2 block below. The metric table is the 300-step measurement and is not extrapolated to 900 steps.
 
 | metric | full prompts | filtered (2 rounds) | change |
 |---|---|---|---|
@@ -278,7 +278,28 @@ The 900-step filter arm (`ep900_base_filt`) repeats this at 3.27 epochs; it fini
 
 **What is established**: the filter mechanically raises per-step gradient density by 20.2 pp and roughly halves the zero-variance share, at 1.3× wall-clock. This is arithmetic on 600 logged steps, `make summary` recomputes it.
 
-**What is not established**: that this density gain converts into accuracy above SFT. It does not — the filtered arm is statistically indistinguishable from SFT (0 net on 200 items). It recovers most of the loss seen in the full-prompt arm, but does not pass the baseline. Single seed (42) for the filtered arm; the +4.5 pp vs the full arm has p=0.122, i.e. inside noise at n=200.
+**What is not established**: that this density gain converts into an accuracy gain over the *same-seed full-prompt* arm. It does not. At 300 steps the +4.5 pp vs the full arm has p = 0.122 (inside noise at n=200, single seed). At 900 steps the 2×2 below settles it with two seeds per arm: seed 42 47.5% vs 50.0% (p = 0.4583), seed 7 50.0% vs 49.0% (p = 0.8776), and cross-seed filtered vs filtered p = 0.4996. Density is a mechanical effect; **accuracy sees no measurable net benefit or cost**.
+
+### Seed × filter at 900 steps (2×2, all four arms measured)
+
+Same 1,100-prompt pool, 900 steps (3.27 epochs), same 200 `test_index` items. Every comparison is a paired McNemar test on those 200 items (aligned by `test_index`, intersection = 200).
+
+| seed | full prompts | filtered (2 resample rounds) |
+|---|---|---|
+| 42 | 50.0% (100/200) | 47.5% (95/200) |
+| 7 | 49.0% (98/200) | 50.0% (100/200) |
+| **mean** | **49.5%** | **48.75%** |
+
+Paired McNemar (discordant items `n01`/`n10`, exact two-sided):
+
+| comparison | n01 | n10 | p |
+|---|---|---|---|
+| seed 42 filtered vs seed 42 full | 17 | 12 | 0.4583 |
+| seed 7 filtered vs seed 7 full | 20 | 22 | 0.8776 |
+| seed 7 filtered vs seed 42 filtered | 15 | 20 | 0.4996 |
+| seed 7 filtered vs seed 42 full | 19 | 19 | 1.0000 |
+
+**Conclusion**: the two filtered observations are the same within seed noise, and both filtered arms are indistinguishable from both full-prompt arms. **The filter shows no measurable net gain or net loss on accuracy; the earlier 47.5% vs 50.0% gap (−5 items) is noise.** The only significant contrasts here are against SFT: every GRPO arm beats SFT (seed-42 full p = 0.0011, seed-42 filtered p = 0.0114, seed-7 full p = 0.0046, seed-7 filtered p = 0.0052) — the GRPO gain is real, the filter's contribution to it is not.
 
 ---
 
@@ -294,7 +315,7 @@ Two seeds were run for the **correctness-only, full-prompt** arm; everything els
 
 The two seeds differ by **5.0 pp / 10 items**, in opposite directions relative to SFT (−4.5 pp and +0.5 pp). This spread is *larger* than every delta the 60-step pilot reported (3–4 pp). So the pilot's "+3.0%" style deltas are indistinguishable from seed noise at this scale and n; no single-seed arm in this repo should be read as a real GRPO effect.
 
-The filtered arm was run for **seed 42 only**; `long_base_s7_filt` was **not run** (the second filtered run would have needed ~2 h more on the shared 6 GB card). Its accuracy gain (+4.5 pp vs the same-seed full arm, p = 0.122) is therefore a single-seed observation, though the per-step gradient-density gain (below) is measured over 300 steps.
+This table is the **300-step** pair; at that budget the filtered arm was run for **seed 42 only**, and `long_base_s7_filt` was **not run** (a second filtered run would have needed ~2 h more on the shared 6 GB card). Its +4.5 pp vs the same-seed full arm (p = 0.122) is therefore a single-seed, single-budget observation. At **900 steps both seeds and both arms are measured** (2×2 above): full 50.0% / 49.0%, filtered 47.5% / 50.0%, i.e. the filter effect is zero.
 
 ---
 
@@ -310,7 +331,7 @@ Directions, with the evidence status for each. "Measured" = a number in this rep
 | **Group size G** | Zero variance comes from `p^G + (1−p)^G`; at G=6 with heterogeneous per-prompt pass rates, the 37% is dominated by prompts whose pass rate is near 0 (hard questions), where increasing G does not help. Larger G helps only mid-difficulty prompts, at linear generation cost. | measured (G=6) + reasoning |
 | **Reward sparsity** | Binary 0/1 correctness at ~35% pass rate creates a structural zero-variance floor. Dense/partial-credit or format rewards raise density: the pilot's format arm had `frac_reward_zero_std = 0.000` yet still did not beat SFT — so density alone is **necessary but not sufficient**; reward *direction* matters more. | measured (pilot format arm) |
 
-**The empirical answer to "when does GRPO win" from this repo**: when (a) the group has non-zero variance, (b) the reward gradient points at the evaluation metric (not at a proxy like format), and (c) there is enough optimisation budget for each prompt to be seen several times. For (c) the measured threshold is between 0.27 and 3.27 epochs; this setup satisfies (b), was budget-limited on (c) at 300 steps, and only at 900 steps does the sign flip. The filtered 900-step seed-42 arm finished at 47.5% (n=200), −5 items vs the unfiltered 50.0% (p = 0.458), despite raising gradient density (300-step arm: 62.8% → 83.1%). That is a **negative result at sufficient budget**, not a pending measurement: filtering did not convert into accuracy; seed 7 is still 未验证.
+**The empirical answer to "when does GRPO win" from this repo**: when (a) the group has non-zero variance, (b) the reward gradient points at the evaluation metric (not at a proxy like format), and (c) there is enough optimisation budget for each prompt to be seen several times. For (c) the measured threshold is between 0.27 and 3.27 epochs; this setup satisfies (b), was budget-limited on (c) at 300 steps, and only at 900 steps does the sign flip. The complete **2×2 at 900 steps** (two seeds × full/filtered) rules out an accuracy benefit from filtering: seed 42 47.5% vs 50.0% (p = 0.4583), seed 7 50.0% vs 49.0% (p = 0.8776), cross-seed filtered 15 vs 20 discordant items (p = 0.4996) — a tie. The density gain is real (300-step arm: 62.8% → 83.1%) but does not convert into accuracy. All four arms clear SFT (p = 0.0011–0.0114), so the GRPO gain is real while the filter's contribution is not.
 
 ---
 
@@ -356,7 +377,7 @@ tests/            22 offline unit tests for the verifier (no GPU needed)
 
 These are the three ceilings on the headline claim, stated before the numbers are quoted anywhere else.
 
-- **Single seed.** The +23 items come from **seed 42 only**. Seed 7 (base + filter) is queued, not run. Until the 2×2 matrix is complete, this is a single-seed observation and must not be quoted as an established GRPO effect. The 300-step arm already showed a 10-item seed spread (p=0.076) at the same n, so a one-seed +23 is exactly the size of result that needs a second seed before it is called reliable.
+- **Single seed for the headline delta.** The +23 items come from **seed 42 only**. Seed 7 is now complete for both arms at 900 steps: full prompts **49.0% (98/200)** (+21 items vs SFT, p = 0.0046) and filtered **50.0% (100/200)** (+23 items, p = 0.0052). The two full-prompt seeds differ by 1.0 pp (2 items, p = 0.8679) at n=200, so the *direction* of the GRPO gain replicates across seeds, but the headline number remains a seed-42 observation. Do not quote +23 as a seed-averaged effect; quote the seed-42 value and the seed-7 replicate separately.
 - **The n=200 intervals are wide and only touch.** GRPO 50.0% Wilson [43.1, 56.9] vs SFT 38.5% [32.0, 45.4]. The paired McNemar clears the bar (p = 0.001, 35 GRPO-only vs 12 SFT-only items), but the marginal intervals overlap at exactly one edge. The correct wording is "**net +23 items, p = 0.001**"; "显著提升 / significant improvement" is banned in this repo.
 - **Train/test contamination was checked, and is zero.** `python3 scripts/check_overlap.py --config configs/epoch900.yaml` (`make overlap`) rebuilds the split from the config seed and compares both indices and question text:
 
@@ -383,7 +404,7 @@ Other limits, unchanged in kind:
 - **Single scale.** Qwen2.5-0.5B only. No claim about larger models.
 - **Epoch budget:** met only in the 900-step arm (3.27 epochs). The 300-step arm ran 0.268 epoch and is reported as a counter-example, not as a result about GRPO. The ≥2-epoch run on the *full* pool (~2,236 steps, ~12 h per curve) was never run.
 - **Statistical power.** n = 200 gives roughly ±6 pp at 95% on a single arm; deltas of 3–4 pp are inside that interval. "No detected effect" ≠ "GRPO is harmful".
-- **Filter coverage.** Seed 42 filtered arm finished at 47.5% (n=200, −5 items vs full, p = 0.458) — a negative result on accuracy despite the gradient-density gain; seed 7 filtered arm is not run. The filter's accuracy effect is therefore still a single-seed observation; only the gradient-density gain is measured over hundreds of steps.
+- **Filter coverage (complete at 900 steps).** Both seeds, both arms: seed 42 filtered 47.5% (95/200) vs full 50.0% (100/200), p = 0.4583; seed 7 filtered 50.0% (100/200) vs full 49.0% (98/200), p = 0.8776; cross-seed filtered 15 vs 20 discordant items, p = 0.4996. Two filtered observations therefore give **no measurable net gain or net loss** on accuracy — the 47.5% vs 50.0% difference is noise, not a real drop. The gradient-density gain (62.8% → 83.1% at 300 steps, 1.3× wall clock) is the only measured, reproducible filter effect.
 - **Baseline drift: checked, none.** `base.json` (30.0%) predates the last edit of `src/evaluate.py`, so it was re-run under the 900-step config as `base_ep900.json`: **0.300 (60/200)** again, with all 200 per-item `pred`/`correct` values identical to the earlier file. The 30.0% baseline is therefore stable across the old and new evaluation paths.
 - **One benchmark.** GSM8K test subset only; no MATH, no out-of-domain generalisation, no pass@k.
 - **PPO absent.** No PPO baseline was run (see above); no PPO numbers are claimed.
