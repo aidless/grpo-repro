@@ -1,0 +1,10 @@
+{
+  "name": "ep900_s7_filt_step900",
+  "model_path": "/root/grpo-repro/experiments/checkpoints/ep900_s7_filt",
+  "num_samples": 200,
+  "accuracy": 0.5,
+  "format_compliance_rate": 0.96,
+  "parse_fail_rate": 0.005,
+  "avg_completion_tokens": 127.0,
+  "elapsed_seconds": 153.07495856285095
+}

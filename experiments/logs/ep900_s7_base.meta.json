@@ -1,0 +1,14 @@
+{
+  "tag": "ep900_s7_base",
+  "seed": 7,
+  "reward_set": "base",
+  "zero_var_rounds": 0,
+  "max_steps": 900,
+  "batch_size": 24,
+  "num_generations": 6,
+  "max_completion_length": 192,
+  "pool_size": 1100,
+  "prompt_visits": 3600,
+  "train_seconds": 9035.3,
+  "peak_gpu_gib": 2.527
+}

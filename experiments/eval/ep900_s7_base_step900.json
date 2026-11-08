@@ -1,0 +1,10 @@
+{
+  "name": "ep900_s7_base_step900",
+  "model_path": "/root/grpo-repro/experiments/checkpoints/ep900_s7_base",
+  "num_samples": 200,
+  "accuracy": 0.49,
+  "format_compliance_rate": 0.955,
+  "parse_fail_rate": 0.0,
+  "avg_completion_tokens": 126.36,
+  "elapsed_seconds": 68.89787340164185
+}

@@ -12,7 +12,7 @@
 **这个仓能证明什么**：同一套 GRPO 配置在 3.27 epoch 下比 SFT 多 23 题（50.0% vs 38.5%，配对 McNemar p=0.001），
 在 0.268 epoch 下反而打不过 SFT（34.0%），复现了"epoch 预算决定结果"。
 
-**这个仓不能证明什么**：head 的 +23 题仍来自 seed 42 单点；seed 7 已跑完 full/filter 两条 900 步臂（49.0% / 50.0%），复现了方向但不是同一个数，不能把 +23 当成两 seed 平均效应。n=200，两个区间只在上沿相接，不能写"显著提升"，也不能外推到其他模型规模。
+**这个仓不能证明什么**：head 的 +23 题仍来自 seed 42 单点；seed 7 已跑完 full/filter 两条 900 步臂（49.0% / 50.0%，产物见 `experiments/eval/ep900_s7_base_step900.json` 与 `ep900_s7_filt_step900.json`，逐题记录在各自 `_samples.jsonl`），复现了方向但不是同一个数，不能把 +23 当成两 seed 平均效应。n=200，两个区间只在上沿相接，不能写"显著提升"，也不能外推到其他模型规模。
 
 <p align="center">
   <img src="experiments/curves/reward_vs_eval.png" width="820" alt="reward vs eval across checkpoints">
@@ -207,8 +207,8 @@ The initial 12-hour rule would have allowed only the seed-42 pair. The owner the
 |---|---|---|---|---|---|
 | `ep900_base` (seed 42, full) | **completed** | 14,715.7 s (4.09 h) | 2.33 GiB | **50.0% (100/200)** | beats SFT, McNemar p = 0.001 |
 | `ep900_base_filt` (seed 42, filter) | **completed** | 32,023.1 s (8.90 h) | 2.33 GiB | **47.5% (95/200)** | 2 resample rounds; finished above the pre-set 1.5× (~7 h) stop threshold |
-| `ep900_s7_base` (seed 7, full) | **completed** | 9,035.3 s (2.51 h) | 2.53 GiB | **49.0% (98/200)** | second seed; 1.0 pp below the seed-42 full arm |
-| `ep900_s7_filt` (seed 7, filter) | **completed** | 21,917.8 s (6.09 h) | 2.53 GiB | **50.0% (100/200)** | 2 resample rounds; wall clock inflated by GPU co-tenant load |
+| `ep900_s7_base` (seed 7, full) | **completed** | 9,035.3 s (2.51 h) | 2.53 GiB | **49.0% (98/200)** | second seed; 1.0 pp below the seed-42 full arm; `experiments/eval/ep900_s7_base_step900.json` |
+| `ep900_s7_filt` (seed 7, filter) | **completed** | 21,917.8 s (6.09 h) | 2.53 GiB | **50.0% (100/200)** | 2 resample rounds; wall clock inflated by GPU co-tenant load; `experiments/eval/ep900_s7_filt_step900.json` |
 
 ### Decision rule (fixed in advance)
 
@@ -300,6 +300,8 @@ Paired McNemar (discordant items `n01`/`n10`, exact two-sided):
 | seed 7 filtered vs seed 7 full | 20 | 22 | 0.8776 |
 | seed 7 filtered vs seed 42 filtered | 15 | 20 | 0.4996 |
 | seed 7 filtered vs seed 42 full | 19 | 19 | 1.0000 |
+
+All eight numbers above are recomputable from committed artifacts: `make summary-ep900` reads `experiments/eval/ep900_{base,base_filt,s7_base,s7_filt}_step900.json` (per-item rows in the matching `*_samples.jsonl`) and prints this 2×2 table plus the McNemar block. Wall clock / peak VRAM come from `experiments/logs/ep900_*.meta.json`; step-level rewards from `experiments/logs/ep900_*.jsonl`.
 
 **Conclusion**: the two filtered observations are the same within seed noise, and both filtered arms are indistinguishable from both full-prompt arms. **The filter shows no measurable net gain or net loss on accuracy; the earlier 47.5% vs 50.0% gap (−5 items) is noise.** The only significant contrasts here are against SFT: every GRPO arm beats SFT (seed-42 full p = 0.0011, seed-42 filtered p = 0.0114, seed-7 full p = 0.0046, seed-7 filtered p = 0.0052) — the GRPO gain is real, the filter's contribution to it is not.
 
