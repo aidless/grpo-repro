@@ -2,7 +2,7 @@
 
 **Positioning**: A small, fully reproducible GRPO testbed on GSM8K — LoRA SFT → 60-step pilot (correctness-only vs correctness + R1-style format) → 300-step GRPO on the **full** training split (the 0.27-epoch counter-example) → 900-step GRPO on a 1,100-prompt pool (3.27 epochs), with a **zero-variance filtering** ablation and two seeds → one shared verifier for both reward and evaluation.
 
-**中文一句话**：单张 RTX 3060 6GB、Qwen2.5-0.5B + LoRA r16。在 3.27 epoch 下 GRPO **超过** SFT：50.0%（100/200）对 38.5%（77/200），净 +23 题、配对 McNemar p=0.001；而同一套配置在 0.268 epoch 时只有 34.0%，连 SFT 都打不过。所以这个规模上**决定结果的是 epoch 预算，不是算法本身**。单 seed、n=200，两个区间只在上沿相接，因此只写"净 +23 题、p=0.001"，不写"显著提升"。
+**中文一句话**：单张 RTX 3060 6GB、Qwen2.5-0.5B + LoRA r16。在 3.27 epoch 下 GRPO **超过** SFT：50.0%（100/200，[`ep900_base_step900.json`](experiments/eval/ep900_base_step900.json)）对 38.5%（77/200，[`sft.json`](experiments/eval/sft.json)），净 +23 题、配对 McNemar p=0.001；而同一套配置在 0.268 epoch 时只有 34.0%（[`long_base_s42.json`](experiments/eval/long_base_s42.json)），连 SFT 都打不过。所以这个规模上**决定结果的是 epoch 预算，不是算法本身**。单 seed、n=200，两个区间只在上沿相接，因此只写"净 +23 题、p=0.001"，不写"显著提升"。
 
 > **仓库不含权重**：`experiments/checkpoints/` 下的 `*.safetensors`（合计 1.77 GB，单文件最大 942.3 MiB）不入库。
 > clone 下来没有 checkpoint 是预期行为，不是仓库坏了：用 `bash scripts/run_all.sh`（60 步 pilot）/
@@ -85,9 +85,9 @@ The single most important number in this repo is not "GRPO vs SFT" but **how man
 | model | accuracy (n=200) | 95% CI (Wilson) | note |
 |---|---|---|---|
 | base (no SFT, no GRPO) | **0.300** (60/200) | [0.241, 0.367] | re-measured under the 900-step config: `experiments/eval/base_ep900.json` is **0.300 (60/200)**, and all 200 per-item predictions are byte-identical to `base.json` — the baseline did not drift |
-| + LoRA SFT (1 epoch, 3,000 samples) | **0.385** (77/200) | [0.320, 0.454] | reference for every comparison below |
-| + GRPO, 900 steps @ **3.27 epochs** (seed 42, full prompts) | **0.500** (100/200) | [0.431, 0.569] | **+23 items**, paired McNemar vs SFT **p = 0.001** |
-| + GRPO, 300 steps @ **0.268 epochs** (seed 42, full prompts) | **0.340** (68/200) | [0.278, 0.408] | same config, 1/12 the prompt visits → **counter-example, not the conclusion** |
+| + LoRA SFT (1 epoch, 3,000 samples) | **0.385** (77/200) | [0.320, 0.454] | reference for every comparison below; `experiments/eval/sft.json` |
+| + GRPO, 900 steps @ **3.27 epochs** (seed 42, full prompts) | **0.500** (100/200) | [0.431, 0.569] | **+23 items**, paired McNemar vs SFT **p = 0.001**; `experiments/eval/ep900_base_step900.json`, table recomputed by `make summary-ep900` |
+| + GRPO, 300 steps @ **0.268 epochs** (seed 42, full prompts) | **0.340** (68/200) | [0.278, 0.408] | same config, 1/12 the prompt visits → **counter-example, not the conclusion**; `experiments/eval/long_base_s42.json` |
 
 Reading: at 0.268 epoch each prompt is seen once (1,200 visits over a 4,473-prompt pool) and GRPO lands 4.5 pp **below** SFT. At 3.27 epochs (3,600 visits over a 1,100-prompt pool) it lands 11.5 pp **above** SFT, and the paired test clears p = 0.05. The algorithm did not change between those two rows — only the epoch budget did. That is why the earlier negative result is filed as a budget artefact rather than an algorithmic ceiling.
 
