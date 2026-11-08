@@ -43,6 +43,8 @@ make eval          # 200-item tables for the checkpoints you trained
 
 上面这四条重训练/重评测命令（以及 `bash scripts/run_all.sh` / `run_long.sh` / `chain_ep900.sh`）：**只验证了入口存在与 `make -n` 可解析，未在此环境完整执行**（需 GPU 与已训练权重，约 1.5–5 h）。
 
+**Model path in configs**: `configs/long.yaml` and `configs/epoch900.yaml` set `model_path` to `/data3/hf_cache/hub/models--Qwen--Qwen2.5-0.5B-Instruct/snapshots/...`, which is the HuggingFace cache directory on the machine where these runs were produced; the same path is echoed in the shipped `experiments/eval/*.json` as run metadata. After cloning, point `model_path` at your own cache, or simply set it to `Qwen/Qwen2.5-0.5B-Instruct` and let `transformers` resolve/download the snapshot. The recorded paths are left unchanged on purpose; a different local path does not change any measured number or the comparison setup, because every arm loads the same snapshot weights.
+
 Actual output recorded at training time (the shipped `experiments/eval/verify_*.json`; not re-runnable without the LoRA checkpoints):
 
 ```text
