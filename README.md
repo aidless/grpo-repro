@@ -1,5 +1,7 @@
 # grpo-repro
 
+[![CI](https://github.com/aidless/grpo-repro/actions/workflows/ci.yml/badge.svg)](https://github.com/aidless/grpo-repro/actions/workflows/ci.yml)
+
 **Positioning**: A small, fully reproducible GRPO testbed on GSM8K — LoRA SFT → 60-step pilot (correctness-only vs correctness + R1-style format) → 300-step GRPO on the **full** training split (the 0.27-epoch counter-example) → 900-step GRPO on a 1,100-prompt pool (3.27 epochs), with a **zero-variance filtering** ablation and two seeds → one shared verifier for both reward and evaluation.
 
 **中文一句话**：单张 RTX 3060 6GB、Qwen2.5-0.5B + LoRA r16。在 3.27 epoch 下 GRPO **超过** SFT：50.0%（100/200，[`ep900_base_step900.json`](experiments/eval/ep900_base_step900.json)）对 38.5%（77/200，[`sft.json`](experiments/eval/sft.json)），净 +23 题、配对 McNemar p=0.001；而同一套配置在 0.268 epoch 时只有 34.0%（[`long_base_s42.json`](experiments/eval/long_base_s42.json)），连 SFT 都打不过。所以这个规模上**决定结果的是 epoch 预算，不是算法本身**。单 seed、n=200，两个区间只在上沿相接，因此只写"净 +23 题、p=0.001"，不写"显著提升"。
