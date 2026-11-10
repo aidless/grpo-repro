@@ -1,5 +1,5 @@
 # 实测环境（2026-11-05, RTX 3060 Laptop 6GB / Python 3.12.3）
-torch==2.14.1
+torch==2.15.0
 transformers==5.17.0
 trl==1.17.1
 peft==0.21.2
